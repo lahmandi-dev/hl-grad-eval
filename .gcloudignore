@@ -1,0 +1,13 @@
+.gcloudignore
+.git
+.gitignore
+.venv
+tests/
+.pytest_cache/
+uv.lock
+*.pyc
+__pycache__/
+.env
+.adk/
+**/.adk
+**/.adk/*

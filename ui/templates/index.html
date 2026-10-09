@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HL-Manager — Évaluation des Employés (Agent Engine)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-red: #DC2626;
+      --primary-red-hover: #B91C1C;
+      --primary-red-dark: #991B1B;
+      --primary-red-deep: #7F1D1D;
+      --red-50: #FEF2F2;
+      --red-100: #FEE2E2;
+      --red-200: #FECACA;
+      --red-300: #FCA5A5;
+      --red-800: #991B1B;
+      --red-900: #7F1D1D;
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-300: #D1D5DB;
+      --gray-600: #4B5563;
+      --gray-700: #374151;
+      --gray-800: #1F2937;
+      --gray-900: #111827;
+      --surface: #FFFFFF;
+      --text: #1F2937;
+      --text-muted: #6B7280;
+      --border: #FCA5A5;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 2px 0 rgba(185, 28, 28, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(185, 28, 28, 0.1), 0 2px 4px -1px rgba(185, 28, 28, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(185, 28, 28, 0.12), 0 4px 6px -2px rgba(185, 28, 28, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #FDF4F4;
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Navigation Header - Red Gradient */
+    header {
+      background: linear-gradient(135deg, #7F1D1D 0%, #991B1B 45%, #DC2626 100%);
+      color: white;
+      padding: 0.9rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(153, 27, 27, 0.25);
+      border-bottom: 2px solid #B91C1C;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-icon {
+      background: rgba(255, 255, 255, 0.2);
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(4px);
+    }
+
+    .brand-title h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-title p {
+      font-size: 0.78rem;
+      color: var(--red-200);
+      font-weight: 500;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 0.35rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #FEE2E2;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34D399;
+      box-shadow: 0 0 8px #34D399;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.9); }
+    }
+
+    .btn-reset {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 0.4rem 0.9rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+
+    .btn-reset:hover {
+      background: rgba(255, 255, 255, 0.28);
+      transform: translateY(-1px);
+    }
+
+    /* Main Container (Sidebar + Chat Area) */
+    .app-container {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      flex: 1;
+      height: calc(100vh - 65px);
+      overflow: hidden;
+    }
+
+    /* Left Sidebar: BigQuery Employees */
+    .sidebar {
+      background: #FFFBFB;
+      border-right: 1.5px solid var(--red-200);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 1rem 1.1rem;
+      background: #FEF2F2;
+      border-bottom: 1px solid var(--red-200);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sidebar-header h2 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--primary-red-deep);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .btn-refresh {
+      background: white;
+      border: 1px solid var(--red-300);
+      color: var(--primary-red-dark);
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+    }
+
+    .btn-refresh:hover {
+      background: var(--red-50);
+      border-color: var(--primary-red);
+    }
+
+    .search-box {
+      padding: 0.75rem 1rem;
+      background: #FFF;
+      border-bottom: 1px solid var(--red-100);
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.55rem 0.85rem;
+      font-size: 0.82rem;
+      border: 1.5px solid var(--red-200);
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: border-color 0.15s ease;
+      background: #FFF;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary-red);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+    }
+
+    .employee-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .employee-card {
+      background: white;
+      border: 1px solid var(--red-200);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 0.9rem;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .employee-card:hover {
+      border-color: var(--primary-red);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(220, 38, 38, 0.12);
+    }
+
+    .employee-card.selected {
+      border: 1.8px solid var(--primary-red);
+      background: #FEF2F2;
+    }
+
+    .emp-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .emp-name {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .emp-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: var(--red-100);
+      color: var(--primary-red-deep);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      border: 1px solid var(--red-200);
+    }
+
+    .emp-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .grade-badges {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+    }
+
+    .badge-grade {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+
+    .grade-prev {
+      background: var(--gray-100);
+      color: var(--gray-700);
+      border: 1px solid var(--gray-300);
+    }
+
+    .grade-curr {
+      background: #FEE2E2;
+      color: var(--primary-red-deep);
+      border: 1px solid #FCA5A5;
+    }
+
+    /* Right Main Chat Area */
+    .chat-area {
+      display: flex;
+      flex-direction: column;
+      background: #FAFAFA;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .message {
+      display: flex;
+      gap: 0.85rem;
+      max-width: 82%;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message.agent {
+      align-self: flex-start;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+
+    .avatar.user-av {
+      background: var(--primary-red-dark);
+      color: white;
+      box-shadow: 0 2px 6px rgba(185, 28, 28, 0.3);
+    }
+
+    .avatar.agent-av {
+      background: #FFF;
+      border: 2px solid var(--primary-red);
+      color: var(--primary-red);
+      box-shadow: 0 2px 6px rgba(220, 38, 38, 0.15);
+    }
+
+    .bubble {
+      padding: 0.95rem 1.15rem;
+      border-radius: var(--radius-lg);
+      font-size: 0.88rem;
+      line-height: 1.55;
+      position: relative;
+    }
+
+    .message.user .bubble {
+      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      color: white;
+      border-bottom-right-radius: 2px;
+      box-shadow: 0 4px 10px rgba(185, 28, 28, 0.2);
+    }
+
+    .message.agent .bubble {
+      background: white;
+      color: var(--gray-900);
+      border: 1px solid var(--red-200);
+      border-left: 4px solid var(--primary-red);
+      border-bottom-left-radius: 2px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .bubble p {
+      margin-bottom: 0.5rem;
+    }
+
+    .bubble p:last-child {
+      margin-bottom: 0;
+    }
+
+    .bubble ul {
+      margin-left: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .bubble li {
+      margin-bottom: 0.25rem;
+    }
+
+    .bubble strong {
+      font-weight: 600;
+    }
+
+    /* Validation Action Banner */
+    .validation-banner {
+      margin-top: 0.75rem;
+      padding: 0.75rem 0.9rem;
+      background: #FFF1F2;
+      border: 1.5px dashed var(--primary-red);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .validation-text {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--primary-red-deep);
+    }
+
+    .validation-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-validate {
+      background: #16A34A;
+      color: white;
+      border: none;
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.15s ease;
+    }
+
+    .btn-validate:hover {
+      background: #15803D;
+      transform: translateY(-1px);
+    }
+
+    .btn-reject {
+      background: white;
+      border: 1px solid var(--gray-300);
+      color: var(--gray-700);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-reject:hover {
+      background: var(--gray-100);
+    }
+
+    /* Quick suggestions bar */
+    .quick-actions {
+      padding: 0.6rem 2rem;
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      background: #FFFBFB;
+      border-top: 1px solid var(--red-100);
+    }
+
+    .chip {
+      background: white;
+      border: 1px solid var(--red-300);
+      color: var(--primary-red-dark);
+      padding: 0.35rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .chip:hover {
+      background: var(--red-50);
+      border-color: var(--primary-red);
+      transform: translateY(-1px);
+    }
+
+    /* Input area */
+    .input-bar-container {
+      padding: 1rem 2rem 1.25rem;
+      background: white;
+      border-top: 1px solid var(--red-200);
+    }
+
+    .input-form {
+      display: flex;
+      gap: 0.75rem;
+      position: relative;
+    }
+
+    .chat-textarea {
+      flex: 1;
+      resize: none;
+      height: 48px;
+      max-height: 120px;
+      padding: 0.8rem 1rem;
+      font-family: inherit;
+      font-size: 0.88rem;
+      border: 1.5px solid var(--red-200);
+      border-radius: var(--radius-md);
+      outline: none;
+      transition: border-color 0.15s ease;
+      line-height: 1.4;
+      background: #FFF;
+    }
+
+    .chat-textarea:focus {
+      border-color: var(--primary-red);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+    }
+
+    .btn-send {
+      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      color: white;
+      border: none;
+      padding: 0 1.5rem;
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s ease;
+      box-shadow: 0 3px 8px rgba(185, 28, 28, 0.25);
+    }
+
+    .btn-send:hover {
+      background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
+      transform: translateY(-1px);
+    }
+
+    .btn-send:disabled {
+      background: var(--gray-300);
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Typing indicator */
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      padding: 0.3rem 0;
+    }
+
+    .typing-dots span {
+      width: 7px;
+      height: 7px;
+      background: var(--primary-red);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header - Red Theme -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">👔</div>
+      <div class="brand-title">
+        <h1>HL-MANAGER — Performance RH</h1>
+        <p>Multi-Agent ADK • BigQuery • Google Cloud Agent Runtime</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        <span id="runtime-status-label">Agent Engine: grad-agent (us-central1)</span>
+      </div>
+      <button class="btn-reset" onclick="resetSession()" title="Réinitialiser la session">
+        🔄 Nouvelle session
+      </button>
+    </div>
+  </header>
+
+  <!-- Application Body -->
+  <div class="app-container">
+    
+    <!-- Sidebar: BigQuery Employees -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Employés (BigQuery)</h2>
+        <button class="btn-refresh" onclick="loadEmployees()">
+          🔄 Actualiser
+        </button>
+      </div>
+
+      <div class="search-box">
+        <input 
+          type="text" 
+          id="search-input" 
+          class="search-input" 
+          placeholder="Rechercher par nom ou ID..." 
+          oninput="filterEmployees()"
+        />
+      </div>
+
+      <div class="employee-list" id="employee-list">
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem;">
+          Chargement de la table BigQuery...
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Workspace -->
+    <main class="chat-area">
+      
+      <!-- Messages stream -->
+      <div class="messages-container" id="messages-container">
+        
+        <!-- Welcome Message -->
+        <div class="message agent">
+          <div class="avatar agent-av">🤖</div>
+          <div class="bubble">
+            <p><strong>Bonjour ! Je suis hl-manager</strong>, votre responsable RH intelligent.</p>
+            <p>Ce système multi-agents est connecté à votre table BigQuery <code>hl_dataset_test1.hl_grad_employee-1</code> et déployé sur <strong>Vertex AI Agent Engine</strong>.</p>
+            <p>Je peux vous aider à :</p>
+            <ul>
+              <li><strong>Consulter le dossier d'un employé</strong> (ancienneté, notation précédente N-1, notation en cours).</li>
+              <li><strong>Analyser les performances et proposer une note</strong> (de <strong>A</strong> à <strong>F</strong>).</li>
+              <li><strong>Enregistrer la note</strong> dans BigQuery uniquement après votre validation explicite.</li>
+            </ul>
+            <p><em>Sélectionnez un employé dans la liste à gauche ou tapez directement votre consigne ci-dessous.</em></p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Action Chips -->
+      <div class="quick-actions">
+        <button class="chip" onclick="sendQuickPrompt('Peux-tu me faire un récapitulatif des employés et de leurs notes actuelles ?')">
+          📊 Bilan global des notations
+        </button>
+        <button class="chip" onclick="sendQuickPrompt('Peux-tu récupérer les informations de Claire Martin (EMP-001) ?')">
+          🔍 Dossier Claire Martin
+        </button>
+        <button class="chip" onclick="sendQuickPrompt('Peux-tu récupérer les informations de Lucas Bernard (EMP-002) ?')">
+          🔍 Dossier Lucas Bernard
+        </button>
+        <button class="chip" onclick="sendQuickPrompt('Je valide la notation proposée, tu peux l\'écrire dans BigQuery.')">
+          ✅ Valider la note proposée
+        </button>
+      </div>
+
+      <!-- Bottom input bar -->
+      <div class="input-bar-container">
+        <form class="input-form" id="chat-form" onsubmit="handleFormSubmit(event)">
+          <textarea 
+            id="chat-input" 
+            class="chat-textarea" 
+            placeholder="Écrivez votre message à hl-manager (ex: 'Évalue Thomas Dubois : excellents résultats cette année')..." 
+            rows="1"
+            onkeydown="handleKeyDown(event)"
+          ></textarea>
+          <button type="submit" id="btn-send" class="btn-send">
+            <span>Envoyer</span>
+            <span>➤</span>
+          </button>
+        </form>
+      </div>
+
+    </main>
+
+  </div>
+
+  <script>
+    let currentSessionId = null;
+    let allEmployees = [];
+    let selectedEmployeeId = null;
+
+    const apiBase = window.location.pathname.replace(/\/ui\/?$/, '').replace(/\/+$/, '');
+
+    // Load initial data
+    window.addEventListener('DOMContentLoaded', () => {
+      loadEmployees();
+    });
+
+    async function loadEmployees() {
+      const listEl = document.getElementById('employee-list');
+      listEl.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.8rem;">Actualisation BigQuery...</div>';
+      try {
+        const res = await fetch(apiBase + '/api/employees');
+        if (!res.ok) throw new Error('Erreur HTTP: ' + res.status);
+        const data = await res.json();
+        allEmployees = data.employees || [];
+        renderEmployees(allEmployees);
+      } catch (err) {
+        listEl.innerHTML = `<div style="padding: 1rem; color: var(--primary-red); font-size: 0.8rem;">⚠️ Erreur de chargement BigQuery: ${err.message}</div>`;
+      }
+    }
+
+    function renderEmployees(employees) {
+      const listEl = document.getElementById('employee-list');
+      if (employees.length === 0) {
+        listEl.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.8rem;">Aucun employé trouvé.</div>';
+        return;
+      }
+
+      listEl.innerHTML = employees.map(emp => {
+        const isSelected = emp.id === selectedEmployeeId ? 'selected' : '';
+        const currGrade = emp.notation_encours || '-';
+        const prevGrade = emp.notation_prec || '-';
+
+        return `
+          <div class="employee-card ${isSelected}" onclick="selectEmployee('${emp.id}')">
+            <div class="emp-row-top">
+              <span class="emp-name">${escapeHtml(emp.prenom)} ${escapeHtml(emp.nom)}</span>
+              <span class="emp-id">${escapeHtml(emp.id)}</span>
+            </div>
+            <div class="emp-meta">
+              <span>⏱️ ${escapeHtml(emp.anciennete || '')}</span>
+              <div class="grade-badges">
+                <span class="badge-grade grade-prev" title="Note année précédente N-1">N-1: ${escapeHtml(prevGrade)}</span>
+                <span class="badge-grade grade-curr" title="Note en cours">${escapeHtml(currGrade)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterEmployees() {
+      const q = document.getElementById('search-input').value.toLowerCase().trim();
+      if (!q) {
+        renderEmployees(allEmployees);
+        return;
+      }
+      const filtered = allEmployees.filter(e => 
+        (e.id && e.id.toLowerCase().includes(q)) ||
+        (e.nom && e.nom.toLowerCase().includes(q)) ||
+        (e.prenom && e.prenom.toLowerCase().includes(q))
+      );
+      renderEmployees(filtered);
+    }
+
+    function selectEmployee(empId) {
+      selectedEmployeeId = empId;
+      renderEmployees(allEmployees);
+      const emp = allEmployees.find(e => e.id === empId);
+      if (!emp) return;
+
+      const input = document.getElementById('chat-input');
+      input.value = `Peux-tu consulter le dossier de ${emp.prenom} ${emp.nom} (${emp.id}) ?`;
+      input.focus();
+    }
+
+    function sendQuickPrompt(text) {
+      const input = document.getElementById('chat-input');
+      input.value = text;
+      document.getElementById('chat-form').dispatchEvent(new Event('submit', { cancelable: true }));
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        document.getElementById('chat-form').dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    }
+
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+      const input = document.getElementById('chat-input');
+      const message = input.value.trim();
+      if (!message) return;
+
+      // Add user message to UI
+      appendMessage('user', message);
+      input.value = '';
+
+      // Add typing indicator
+      const typingId = appendTypingIndicator();
+
+      // Disable send button
+      const sendBtn = document.getElementById('btn-send');
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch(apiBase + '/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: message, session_id: currentSessionId })
+        });
+
+        removeTypingIndicator(typingId);
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ detail: res.statusText }));
+          appendMessage('agent', `⚠️ Erreur lors de la communication avec l'agent : ${errData.detail || res.statusText}`);
+          return;
+        }
+
+        const data = await res.json();
+        currentSessionId = data.session_id;
+
+        // Append agent response
+        appendMessage('agent', data.response);
+
+        // If the response mentioned an update or confirmation, refresh BigQuery employee list
+        if (message.toLowerCase().includes('valide') || data.response.toLowerCase().includes('mis à jour') || data.response.toLowerCase().includes('enregistr')) {
+          setTimeout(loadEmployees, 1500);
+        }
+
+      } catch (err) {
+        removeTypingIndicator(typingId);
+        appendMessage('agent', `⚠️ Erreur réseau : ${err.message}`);
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    function appendMessage(role, text) {
+      const container = document.getElementById('messages-container');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${role}`;
+
+      const avatar = document.createElement('div');
+      avatar.className = `avatar ${role === 'user' ? 'user-av' : 'agent-av'}`;
+      avatar.textContent = role === 'user' ? '👤' : '🤖';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = formatMarkdown(text);
+
+      // Check if this looks like a rating proposal awaiting confirmation
+      if (role === 'agent' && (text.includes('propose') || text.includes('note')) && (text.includes('valider') || text.includes('validation') || text.includes('confirmer'))) {
+        const banner = document.createElement('div');
+        banner.className = 'validation-banner';
+        banner.innerHTML = `
+          <span class="validation-text">⚡ hl-manager attend votre validation humaine :</span>
+          <div class="validation-actions">
+            <button class="btn-validate" onclick="sendQuickPrompt('Je valide cette notation, tu peux l\\'écrire dans BigQuery.')">
+              ✅ Valider et Écrire
+            </button>
+            <button class="btn-reject" onclick="sendQuickPrompt('Je ne suis pas d\\'accord avec cette note, propose autre chose.')">
+              ✍️ Modifier
+            </button>
+          </div>
+        `;
+        bubble.appendChild(banner);
+      }
+
+      msgDiv.appendChild(avatar);
+      msgDiv.appendChild(bubble);
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function appendTypingIndicator() {
+      const container = document.getElementById('messages-container');
+      const id = 'typing-' + Date.now();
+      const div = document.createElement('div');
+      div.id = id;
+      div.className = 'message agent';
+      div.innerHTML = `
+        <div class="avatar agent-av">🤖</div>
+        <div class="bubble">
+          <div class="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      `;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+      return id;
+    }
+
+    function removeTypingIndicator(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    function resetSession() {
+      currentSessionId = null;
+      const container = document.getElementById('messages-container');
+      container.innerHTML = `
+        <div class="message agent">
+          <div class="avatar agent-av">🤖</div>
+          <div class="bubble">
+            <p><strong>Nouvelle session initialisée !</strong></p>
+            <p>Comment puis-je vous aider ? Vous pouvez choisir un employé dans la liste pour commencer l'évaluation.</p>
+          </div>
+        </div>
+      `;
+      loadEmployees();
+    }
+
+    function formatMarkdown(text) {
+      if (!text) return '';
+      // Simple markdown parser
+      let html = escapeHtml(text)
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n\n+/g, '</p><p>')
+        .replace(/\n\* (.*?)(?=\n|$)/g, '<li>$1</li>');
+
+      // Wrap list items if present
+      if (html.includes('<li>')) {
+        html = html.replace(/(<li>.*?<\/li>)+/g, '<ul>$&</ul>');
+      }
+
+      return `<p>${html.replace(/\n/g, '<br>')}</p>`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
