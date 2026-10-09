@@ -600,6 +600,192 @@
       0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
       40% { transform: scale(1); opacity: 1; }
     }
+
+    /* --- Auth & Login Window Styles --- */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .login-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .login-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 440px;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(185, 28, 28, 0.35);
+      border: 1px solid var(--red-200);
+      animation: modalSlideUp 0.3s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+      from { transform: translateY(20px) scale(0.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .login-header {
+      background: linear-gradient(135deg, #7F1D1D 0%, #991B1B 50%, #DC2626 100%);
+      color: white;
+      padding: 1.75rem 2rem;
+      text-align: center;
+    }
+
+    .login-icon {
+      font-size: 2.25rem;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+    }
+
+    .login-header h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+
+    .login-header p {
+      font-size: 0.8rem;
+      color: var(--red-100);
+    }
+
+    .login-body {
+      padding: 2rem;
+    }
+
+    .login-error {
+      background: #FEE2E2;
+      border: 1px solid var(--red-300);
+      color: #991B1B;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      margin-bottom: 1.25rem;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .login-field {
+      margin-bottom: 1.25rem;
+    }
+
+    .login-field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 0.4rem;
+    }
+
+    .login-field input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      border: 1.5px solid var(--red-200);
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: all 0.15s ease;
+      background: #FAFAFA;
+      box-sizing: border-box;
+    }
+
+    .login-field input:focus {
+      background: #FFFFFF;
+      border-color: var(--primary-red);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+    }
+
+    .btn-login {
+      width: 100%;
+      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      color: white;
+      border: none;
+      padding: 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(185, 28, 28, 0.25);
+      transition: all 0.15s ease;
+    }
+
+    .btn-login:hover {
+      background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
+      transform: translateY(-1px);
+    }
+
+    .login-hint {
+      margin-top: 1.25rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      background: var(--red-50);
+      padding: 0.6rem 0.8rem;
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--red-200);
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      color: white;
+      font-weight: 500;
+    }
+
+    .btn-logout {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 0.35rem 0.7rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-logout:hover {
+      background: rgba(255, 255, 255, 0.28);
+      border-color: white;
+    }
+
+    .token-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      background: #D1FAE5;
+      color: #065F46;
+      border: 1px solid #A7F3D0;
+      padding: 0.2rem 0.5rem;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -614,6 +800,11 @@
       </div>
     </div>
     <div class="header-controls">
+      <div id="auth-info" class="user-pill" style="display: none;">
+        <span class="token-badge">🔑 Token Actif</span>
+        <span id="auth-username">lahmandi</span>
+        <button class="btn-logout" onclick="logout()" title="Déconnexion">🚪 Quitter</button>
+      </div>
       <div class="status-badge">
         <span class="status-dot"></span>
         <span id="runtime-status-label">Agent Engine: grad-agent (us-central1)</span>
@@ -714,23 +905,205 @@
 
   </div>
 
+  <!-- Login Window Modal -->
+  <div id="login-modal" class="login-overlay">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-icon">🔐</div>
+        <h2>Accès Sécurisé HL-Manager</h2>
+        <p>Connexion et génération de votre token d'accès</p>
+      </div>
+      <div class="login-body">
+        <div id="login-error" class="login-error">
+          <span>⚠️</span>
+          <span id="login-error-msg">Identifiant ou mot de passe incorrect.</span>
+        </div>
+        <form onsubmit="handleLoginSubmit(event)">
+          <div class="login-field">
+            <label for="input-login-username">Identifiant / Login</label>
+            <input 
+              type="text" 
+              id="input-login-username" 
+              placeholder="ex: lahmandi ou admin" 
+              required 
+              autocomplete="username"
+            />
+          </div>
+          <div class="login-field">
+            <label for="input-login-password">Mot de passe</label>
+            <input 
+              type="password" 
+              id="input-login-password" 
+              placeholder="••••••••" 
+              required 
+              autocomplete="current-password"
+            />
+          </div>
+          <button type="submit" id="btn-submit-login" class="btn-login">
+            <span>🔑 Se connecter & Générer le token</span>
+          </button>
+          <div class="login-hint">
+            🔒 <strong>Identifiants de démonstration configurés :</strong><br>
+            • Utilisateur : <code>lahmandi</code> | MDP : <code>admin2026</code><br>
+            • Administrateur : <code>admin</code> | MDP : <code>admin2026</code>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script>
     let currentSessionId = null;
     let allEmployees = [];
     let selectedEmployeeId = null;
 
     const apiBase = window.location.pathname.replace(/\/ui\/?$/, '').replace(/\/+$/, '');
+    const TOKEN_KEY = 'hl_manager_access_token';
+    const USER_KEY = 'hl_manager_username';
+
+    function getAccessToken() {
+      return localStorage.getItem(TOKEN_KEY);
+    }
+
+    function setAuthData(token, username) {
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(USER_KEY, username);
+      updateAuthUI(true, username);
+    }
+
+    function clearAuthData() {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      updateAuthUI(false, null);
+    }
+
+    function updateAuthUI(isAuthenticated, username) {
+      const modal = document.getElementById('login-modal');
+      const authInfo = document.getElementById('auth-info');
+      const authUserSpan = document.getElementById('auth-username');
+
+      if (isAuthenticated) {
+        modal.classList.add('hidden');
+        authInfo.style.display = 'flex';
+        authUserSpan.textContent = username || 'Utilisateur';
+      } else {
+        modal.classList.remove('hidden');
+        authInfo.style.display = 'none';
+        const pass = document.getElementById('input-login-password');
+        if (pass) pass.value = '';
+        setTimeout(() => {
+          const u = document.getElementById('input-login-username');
+          if (u) u.focus();
+        }, 100);
+      }
+    }
+
+    function getAuthHeaders() {
+      const token = getAccessToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+      return headers;
+    }
+
+    async function checkAuth() {
+      const token = getAccessToken();
+      const username = localStorage.getItem(USER_KEY);
+      if (!token) {
+        updateAuthUI(false, null);
+        return false;
+      }
+      try {
+        const res = await fetch(apiBase + '/api/auth/verify', {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          updateAuthUI(true, username);
+          return true;
+        } else {
+          clearAuthData();
+          return false;
+        }
+      } catch (e) {
+        // Fallback keep UI if server offline
+        updateAuthUI(true, username);
+        return true;
+      }
+    }
+
+    async function handleLoginSubmit(event) {
+      event.preventDefault();
+      const userField = document.getElementById('input-login-username');
+      const passField = document.getElementById('input-login-password');
+      const errBox = document.getElementById('login-error');
+      const errMsg = document.getElementById('login-error-msg');
+      const submitBtn = document.getElementById('btn-submit-login');
+
+      errBox.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>⏳ Vérification & Signature du token...</span>';
+
+      try {
+        const res = await fetch(apiBase + '/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: userField.value.trim(),
+            password: passField.value
+          })
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          errBox.style.display = 'flex';
+          errMsg.textContent = data.detail || 'Identifiant ou mot de passe incorrect.';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span>🔑 Se connecter & Générer le token</span>';
+          return;
+        }
+
+        const data = await res.json();
+        setAuthData(data.access_token, data.username);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>🔑 Se connecter & Générer le token</span>';
+        loadEmployees();
+      } catch (err) {
+        errBox.style.display = 'flex';
+        errMsg.textContent = 'Erreur serveur : ' + err.message;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>🔑 Se connecter & Générer le token</span>';
+      }
+    }
+
+    function logout() {
+      clearAuthData();
+      const listEl = document.getElementById('employee-list');
+      listEl.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem;">Veuillez vous connecter pour afficher les données.</div>';
+    }
 
     // Load initial data
-    window.addEventListener('DOMContentLoaded', () => {
-      loadEmployees();
+    window.addEventListener('DOMContentLoaded', async () => {
+      const isAuth = await checkAuth();
+      if (isAuth) {
+        loadEmployees();
+      }
     });
 
     async function loadEmployees() {
+      if (!getAccessToken()) return;
       const listEl = document.getElementById('employee-list');
       listEl.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.8rem;">Actualisation BigQuery...</div>';
       try {
-        const res = await fetch(apiBase + '/api/employees');
+        const res = await fetch(apiBase + '/api/employees', {
+          headers: getAuthHeaders()
+        });
+        if (res.status === 401) {
+          clearAuthData();
+          document.getElementById('login-error').style.display = 'flex';
+          document.getElementById('login-error-msg').textContent = 'Session expirée. Veuillez vous reconnecter.';
+          return;
+        }
         if (!res.ok) throw new Error('Erreur HTTP: ' + res.status);
         const data = await res.json();
         allEmployees = data.employees || [];
@@ -825,14 +1198,28 @@
       const sendBtn = document.getElementById('btn-send');
       sendBtn.disabled = true;
 
+      if (!getAccessToken()) {
+        removeTypingIndicator(typingId);
+        clearAuthData();
+        return;
+      }
+
       try {
         const res = await fetch(apiBase + '/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ message: message, session_id: currentSessionId })
         });
 
         removeTypingIndicator(typingId);
+
+        if (res.status === 401) {
+          clearAuthData();
+          document.getElementById('login-error').style.display = 'flex';
+          document.getElementById('login-error-msg').textContent = 'Session expirée. Veuillez vous reconnecter.';
+          appendMessage('agent', '⚠️ Votre session a expiré. Veuillez vous reconnecter dans la fenêtre de connexion.');
+          return;
+        }
 
         if (!res.ok) {
           const errData = await res.json().catch(() => ({ detail: res.statusText }));

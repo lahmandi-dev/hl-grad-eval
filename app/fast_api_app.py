@@ -94,12 +94,27 @@ from pathlib import Path
 from typing import Optional
 import uuid
 from fastapi.responses import HTMLResponse
-from fastapi import HTTPException
+from fastapi import HTTPException, Header, Depends
 from pydantic import BaseModel
 from google.genai import types as genai_types
 from google.cloud import bigquery
 
+from app.auth import authenticate_user, create_access_token, verify_token
+
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int = 86400
+    username: str
+    role: str = "RH Manager"
 
 
 class ChatRequest(BaseModel):
@@ -110,6 +125,34 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     session_id: str
+
+
+def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
+    """Validate Bearer token from request headers."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentification requise : en-tête Authorization manquant.")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Format d'authentification invalide. Utilisez 'Bearer <token>'.")
+    token = authorization.split("Bearer ", 1)[1].strip()
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token invalide ou session expirée. Veuillez vous reconnecter.")
+    return payload
+
+
+@app.post("/api/login", response_model=LoginResponse)
+async def login(req: LoginRequest):
+    """Authenticate user with login/password and issue an access token."""
+    if not authenticate_user(req.username, req.password):
+        raise HTTPException(status_code=401, detail="Identifiant ou mot de passe incorrect.")
+    token = create_access_token(req.username)
+    return LoginResponse(access_token=token, username=req.username)
+
+
+@app.get("/api/auth/verify")
+async def verify_auth(user: dict = Depends(get_current_user)):
+    """Check if the provided access token is currently valid."""
+    return {"status": "authenticated", "user": user}
 
 
 @app.get("/ui", response_class=HTMLResponse)
@@ -125,8 +168,8 @@ async def serve_ui():
 
 
 @app.get("/api/employees")
-async def get_employees():
-    """Retrieve employees list from BigQuery table."""
+async def get_employees(user: dict = Depends(get_current_user)):
+    """Retrieve employees list from BigQuery table (Protected)."""
     project = os.environ.get("GOOGLE_CLOUD_PROJECT", "hl-gemini-usage")
     bq_client = bigquery.Client(project=project)
     query = f"SELECT * FROM `{project}.hl_dataset_test1.hl_grad_employee-1` ORDER BY id"
@@ -146,15 +189,15 @@ async def get_employees():
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat_endpoint(req: ChatRequest):
-    """Direct in-process chat with the ADK Runner."""
+async def chat_endpoint(req: ChatRequest, user: dict = Depends(get_current_user)):
+    """Direct in-process chat with the ADK Runner (Protected)."""
     runner = getattr(app.state, "runner", None)
     if not runner:
         raise HTTPException(status_code=503, detail="Runner non initialisé")
     session_id = req.session_id or str(uuid.uuid4())
     msg = genai_types.Content(parts=[genai_types.Part.from_text(text=req.message)])
     texts = []
-    async for event in runner.run_async(user_id="user", session_id=session_id, new_message=msg):
+    async for event in runner.run_async(user_id=user.get("sub", "user"), session_id=session_id, new_message=msg):
         if event.content and event.content.parts:
             for part in event.content.parts:
                 if part.text:
@@ -170,4 +213,5 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 

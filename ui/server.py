@@ -83,6 +83,23 @@ def get_gcp_bearer_token() -> str:
     return creds.token
 
 
+from ui.auth import authenticate_user, create_access_token, verify_token
+from fastapi import Header, Depends
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int = 86400
+    username: str
+    role: str = "RH Manager"
+
+
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
@@ -91,6 +108,34 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     session_id: str
+
+
+def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
+    """Validate Bearer token from request headers."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentification requise : en-tête Authorization manquant.")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Format d'authentification invalide. Utilisez 'Bearer <token>'.")
+    token = authorization.split("Bearer ", 1)[1].strip()
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token invalide ou session expirée. Veuillez vous reconnecter.")
+    return payload
+
+
+@app.post("/api/login", response_model=LoginResponse)
+async def login(req: LoginRequest):
+    """Authenticate user and issue access token."""
+    if not authenticate_user(req.username, req.password):
+        raise HTTPException(status_code=401, detail="Identifiant ou mot de passe incorrect.")
+    token = create_access_token(req.username)
+    return LoginResponse(access_token=token, username=req.username)
+
+
+@app.get("/api/auth/verify")
+async def verify_auth(user: dict = Depends(get_current_user)):
+    """Verify active token."""
+    return {"status": "authenticated", "user": user}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -114,8 +159,8 @@ async def get_status():
 
 
 @app.get("/api/employees")
-async def get_employees():
-    """Retrieve the current employees table from BigQuery."""
+async def get_employees(user: dict = Depends(get_current_user)):
+    """Retrieve the current employees table from BigQuery (Protected)."""
     try:
         bq_client = bigquery.Client(project=project)
         query = f"SELECT * FROM `{project}.hl_dataset_test1.hl_grad_employee-1` ORDER BY id"
@@ -138,8 +183,8 @@ async def get_employees():
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
-    """Send a message to the deployed Agent Runtime via A2A."""
+async def chat(request: ChatRequest, user: dict = Depends(get_current_user)):
+    """Send a message to the deployed Agent Runtime via A2A (Protected)."""
     token = get_gcp_bearer_token()
     headers = {"Authorization": f"Bearer {token}"}
     session_id = request.session_id or str(uuid.uuid4())
